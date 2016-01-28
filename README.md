@@ -1,0 +1,1 @@
+# kibana-rison-json-converter
