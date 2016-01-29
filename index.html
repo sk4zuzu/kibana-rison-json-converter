@@ -21,7 +21,7 @@ var define = function(func) { rison = func(); };
     $('#risonb').click(function() {
         var url = decodeURIComponent($('#rison').val().split('\n')[0]);
         var prefix = getPrefix(url, '_a');
-        var encodedRison = getKey(url, '_a');
+        var encodedRison = prefix ? getKey(url, '_a') : url;
         $('#rison').val(prefix + encodedRison);
         var decodedRison = rison.decode(encodedRison);
         $('#json').val(JSON.stringify(decodedRison, null, 4));
@@ -37,7 +37,7 @@ var define = function(func) { rison = func(); };
 });</script>
 
 <body>
-    <label for="rison">rison:</label>
+    <label for="rison">rison (or kibana discover):</label>
     <button id="risonb">convert to json</button>
     <textarea id="rison" style="width:100%;" rows="12" wrap="soft"></textarea>
     <label for="json">json:</label>
