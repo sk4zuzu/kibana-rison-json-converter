@@ -1,0 +1,48 @@
+<!doctype html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+
+<script>
+var rison;
+var define = function(func) { rison = func(); };
+</script>
+
+<script src="https://rawgit.com/elastic/kibana/master/src/ui/public/utils/rison.js"></script>
+
+<script>$(document).ready(function() {
+    var getPrefix = function(url, key) {
+      var rslt = new RegExp('^(.*[?&]' + key + '=)', 'i').exec(url);
+      return rslt && unescape(rslt[1]) || '';
+    };
+    var getKey = function(url, key) {
+      var rslt = new RegExp('[?&]' + key + '=([^&]+)', 'i').exec(url);
+      return rslt && unescape(rslt[1]) || '';
+    };
+    $('#risonb').click(function() {
+        var url = decodeURIComponent($('#rison').val().split('\n')[0]);
+        var prefix = getPrefix(url, '_a');
+        var encodedRison = getKey(url, '_a');
+        $('#rison').val(prefix + encodedRison);
+        var decodedRison = rison.decode(encodedRison);
+        $('#json').val(JSON.stringify(decodedRison, null, 4));
+    });
+    $('#jsonb').click(function() {
+        var url = decodeURIComponent($('#rison').val().split('\n')[0]);
+        var prefix = getPrefix(url, '_a');
+        var encodedJson = $('#json').val();
+        var decodedJson = JSON.parse(encodedJson);
+        var encodedRison = rison.encode(decodedJson);
+        $('#rison').val(prefix + encodedRison);
+    });
+});</script>
+
+<body>
+    <label for="rison">rison:</label>
+    <button id="risonb">convert to json</button>
+    <textarea id="rison" style="width:100%;" rows="12" wrap="soft"></textarea>
+    <label for="json">json:</label>
+    <button id="jsonb">convert to rison</button>
+    <textarea id="json" style="width:100%;" rows="24"></textarea>
+</body>
+
+<!-- vim:set ts=4 sw=4 et: -->
