@@ -10,39 +10,64 @@ var define = function(func) { rison = func(); };
 <script src="https://rawgit.com/elastic/kibana/master/src/ui/public/utils/rison.js"></script>
 
 <script>$(document).ready(function() {
-    var getPrefix = function(url, key) {
-      var rslt = new RegExp('^(.*[?&]' + key + '=)', 'i').exec(url);
-      return rslt && unescape(rslt[1]) || '';
+    // https://tools.ietf.org/html/rfc3986
+    var uriDecode = function(uri) {
+        var m = uri.split(/[?&]/);
+        var url = m.shift();
+        var kv = m.map(function(p) {
+            var m = p.split(/=/);
+            if (m) {
+                var k = decodeURIComponent(m[0]);
+                var v = decodeURIComponent(m[1]);
+                return [k, v];
+            }
+            return [null, null];
+        });
+        return { "url": url, "kv": kv };
     };
-    var getKey = function(url, key) {
-      var rslt = new RegExp('[?&]' + key + '=([^&]+)', 'i').exec(url);
-      return rslt && unescape(rslt[1]) || '';
+    // https://tools.ietf.org/html/rfc3986
+    var uriEncode = function(components) {
+        var kv = components.kv;
+        var params = kv.map(function(m) {
+            var k = encodeURIComponent(m[0]);
+            var v = encodeURIComponent(m[1]);
+            return k + '=' + v;
+        }).join('&');
+        return components.url + (params ? '?' + params : '');
     };
-    $('#risonb').click(function() {
-        var url = decodeURIComponent($('#rison').val().split('\n')[0]);
-        var prefix = getPrefix(url, '_a');
-        var encodedRison = prefix ? getKey(url, '_a') : url;
-        $('#rison').val(prefix + encodedRison);
-        var decodedRison = rison.decode(encodedRison);
-        $('#json').val(JSON.stringify(decodedRison, null, 4));
-    });
-    $('#jsonb').click(function() {
-        var url = decodeURIComponent($('#rison').val().split('\n')[0]);
-        var prefix = getPrefix(url, '_a');
-        var encodedJson = $('#json').val();
-        var decodedJson = JSON.parse(encodedJson);
-        var encodedRison = rison.encode(decodedJson);
-        $('#rison').val(prefix + encodedRison);
+    $('button#discoverb').click(function() {
+        var components = uriDecode($('textarea#discover').val().split('\n')[0]);
+        $('textarea#discover').val(uriEncode(components));
+        $params = $('div#params').empty();
+        if (components.kv.length > 0) {
+            var $button = $('<button id="paramsb">convert to discover</button>');
+            $params.append($button).append($('<br>'));
+            $button.click(function() {
+                var components = uriDecode($('textarea#discover').val().split('\n')[0]);
+                components.kv = components.kv.map(function(m) {
+                    var k = m[0];
+                    var v = m[1];
+                    var $textarea = $('textarea#' + k);
+                    return [k, rison.encode(JSON.parse($textarea.val()))];
+                });
+                $('textarea#discover').val(uriEncode(components));
+            });
+        }
+        components.kv.reduce(function($a, m) {
+            var k = m[0];
+            var v = m[1];
+            var $label = $('<label for="'+ k +'">'+ k +'</label>');
+            var $textarea = $('<textarea id="'+ k +'" style="width:100%;" rows="12"></textarea>');
+            $textarea.val(JSON.stringify(rison.decode(v), null, 4));
+            return $a.append($label).append($textarea);
+        }, $params);
     });
 });</script>
 
 <body>
-    <label for="rison">rison (or kibana discover):</label>
-    <button id="risonb">convert to json</button>
-    <textarea id="rison" style="width:100%;" rows="12" wrap="soft"></textarea>
-    <label for="json">json:</label>
-    <button id="jsonb">convert to rison</button>
-    <textarea id="json" style="width:100%;" rows="24"></textarea>
+    <button id="discoverb">convert to json</button>
+    <textarea id="discover" style="width:100%;" rows="8" wrap="soft"></textarea>
+    <div id="params" style="width:100%;"></div>
 </body>
 
 <!-- vim:set ts=4 sw=4 et: -->
